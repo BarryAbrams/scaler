@@ -1,0 +1,7 @@
+import c4d
+#Welcome to the world of Python
+
+
+def main():
+    global Output1
+    Output1 = Input1 + Input2
