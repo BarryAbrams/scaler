@@ -1,14 +1,22 @@
 import c4d, math, imp
 from c4d import utils
 #Welcome to the world of Python
-scalerUtils = imp.load_source("mymodule", "/Users/barry/Desktop/scaler/scalerUtils.py")
-object = imp.load_source("mymodule", "/Users/barry/Desktop/scaler/object.py")
+scalerUtils = imp.load_source("mymodule", "/Users/barry/Documents/3D Stuff/Python/scalerUtils.py")
+object = imp.load_source("mymodule", "/Users/barry/Documents/3D Stuff/Python/object.py")
 
 def main(op, doc):
+    clearObjects = op[c4d.ID_USERDATA, 8]
+    if doc.GetTime().GetFrame(30) == 0:
+        if clearObjects == True:
+            parent = op[c4d.ID_USERDATA, 9]
+            for child in parent.GetChildren():
+                child.Remove()
 
     obj = op.GetDown().GetClone()
     obj[c4d.ID_BASEOBJECT_VISIBILITY_EDITOR] = 2
     obj[c4d.ID_BASEOBJECT_VISIBILITY_RENDER] = 2
+
+
 
     for i in range(op[c4d.ID_USERDATA,1]):
         split(doc, op, obj, i)
@@ -22,9 +30,10 @@ def main(op, doc):
         points = [pointA, pointB, pointC, pointD]
         rect = scalerUtils.Rect(points)
 
-        object.createObject(op, obj, polyID, rect)
+        object.createObject(op, obj, polyID, rect, doc.GetMaterials())
 
     return obj
+
 
 def split(doc, op, obj, iteration):
     polyes = obj.GetAllPolygons()
@@ -59,7 +68,7 @@ def split(doc, op, obj, iteration):
         size = op[c4d.ID_USERDATA, 5]*2**(op[c4d.ID_USERDATA, 1]/2)
 
         #horizontal
-        if iteration <= 3:
+        if iteration <= 4 and iteration != 0:
             obj.ResizeObject(pointCount + 4, polyCount + 1)
 
             length = (points[A] - points[D]).GetLength()
