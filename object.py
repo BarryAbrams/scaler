@@ -15,122 +15,120 @@ def createObject(op, obj, polyID, rect, matlist):
         nullObject.SetName(identifer)
         nullObject.InsertUnder(parent)
         
-        # cube = c4d.BaseObject(c4d.Ocube)
-        # cube.SetName("Test Cube")
-        # cube.InsertUnder(nullObject)
+        sharpenedPencil = c4d.BaseObject(c4d.Oboole)
+        sharpenedPencil.SetName("Sharpened Pencil")
+        sharpenedPencil.InsertUnder(nullObject)
+        sharpenedPencil[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_INTERSECT
 
-        sharpLead = c4d.BaseObject(c4d.Oboole)
-        sharpLead.SetName("Sharp Lead")
-        sharpLead.InsertUnder(nullObject)
-        sharpLead[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_INTERSECT
+        #sharpened pencil mask
+        intersection = c4d.BaseObject(c4d.Onull)
+        intersection.SetName("Intersection")
+        intersection.InsertUnder(sharpenedPencil)
 
-        lead = c4d.BaseObject(c4d.Ocylinder)
-        lead.SetName("Lead")
-        lead.InsertUnder(sharpLead)
-
-        textag = c4d.TextureTag()
-        textag.SetMaterial(matlist[0])
-        textag[c4d.TEXTURETAG_PROJECTION]=c4d.TEXTURETAG_PROJECTION_CYLINDRICAL
-        sharpLead.InsertTag(textag)
-
-        cone = c4d.BaseObject(c4d.Ocone)
-        cone.SetName("Lead Cone")
-        cone[c4d.PRIM_CONE_HSUB] = 1
-        cone[c4d.PRIM_CONE_SEG] = 32
-        cone.InsertUnder(sharpLead)
-
-        removeLead = c4d.BaseObject(c4d.Oboole)
-        removeLead.SetName("Remove Lead")
-        removeLead.InsertUnder(nullObject)
-        removeLead[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_SUBTRACT
-
-        leadRecess = c4d.BaseObject(c4d.Ocylinder)
-        leadRecess.SetName("Lead")
-        leadRecess.InsertUnder(removeLead)
-
-        wood = c4d.BaseObject(c4d.Oboole)
-        wood.SetName("Wood")
-        wood.InsertUnder(removeLead)
-        wood[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_INTERSECT
-		
-		#match = re.match(opname, mname)
-
-
+        combinedShapes = c4d.BaseObject(c4d.Oboole)
+        combinedShapes.SetName("Combined Shapes")
+        combinedShapes.InsertUnder(intersection)
+        combinedShapes[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_UNION
+        combinedShapes[c4d.BOOLEOBJECT_HIGHQUALITY] = False
+        
+        cylinder = c4d.BaseObject(c4d.Ocylinder)
+        cylinder.SetName("Cylinder")
+        cylinder.InsertUnder(combinedShapes)
+        cylinder[c4d.PRIM_AXIS] = c4d.PRIM_AXIS_ZP
+        cylinder[c4d.PRIM_CYLINDER_HSUB] = 1
 
         cone = c4d.BaseObject(c4d.Ocone)
         cone.SetName("Cone")
-        cone[c4d.PRIM_CONE_HSUB] = 1
-        cone[c4d.PRIM_CONE_SEG] = 64
-        cone.InsertUnder(wood)
+        cone.InsertUnder(combinedShapes)
+        cone[c4d.PRIM_AXIS] = c4d.PRIM_AXIS_ZP
+        cone[c4d.PRIM_CYLINDER_HSUB] = 1
 
-        textag = c4d.TextureTag()
-        textag.SetMaterial(matlist[1])
-        textag[c4d.TEXTURETAG_PROJECTION]=c4d.TEXTURETAG_PROJECTION_SPHERICAL
-        cone.InsertTag(textag)
+        #pencil
+        pencil = c4d.BaseObject(c4d.Onull)
+        pencil.SetName("Pencil")
+        pencil.InsertAfter(intersection)
+
+        #main lead
+        lead = c4d.BaseObject(c4d.Ocylinder)
+        lead.SetName("Lead")
+        lead.InsertUnder(pencil)
+        lead[c4d.PRIM_AXIS] = c4d.PRIM_AXIS_ZP
+        lead[c4d.PRIM_CYLINDER_HSUB] = 1
+
+        removeLead = c4d.BaseObject(c4d.Oboole)
+        removeLead.SetName("Remove Lead")
+        removeLead.InsertAfter(lead)
+        removeLead[c4d.BOOLEOBJECT_TYPE] = c4d.BOOLEOBJECT_TYPE_SUBTRACT
 
         extrude = c4d.BaseObject(c4d.Oextrude)
         extrude.SetName("Extrude")
-        extrude.InsertUnder(wood)
-
-
-        textag = c4d.TextureTag()
-        textag.SetMaterial(matlist[random.randint(2,4)])
-        textag[c4d.TEXTURETAG_PROJECTION]=c4d.TEXTURETAG_PROJECTION_CUBIC
-        extrude.InsertTag(textag)
+        extrude.InsertUnder(removeLead)
 
         spline = c4d.BaseObject(c4d.Osplinenside)
         spline.SetName("Spline")
         spline.InsertUnder(extrude)
 
-        
+        leadHole = c4d.BaseObject(c4d.Ocylinder)
+        leadHole.SetName("Lead Hole")
+        leadHole.InsertAfter(extrude)
+        leadHole[c4d.PRIM_AXIS] = c4d.PRIM_AXIS_ZP
+        leadHole[c4d.PRIM_CYLINDER_HSUB] = 1
+
+
     else:
         nullObject = foundItem
         #print("known")
 
     padding = 10
     totalHeight = rect.height - padding
-        
-    nullObject[c4d.NULLOBJECT_DISPLAY] = c4d.NULLOBJECT_DISPLAY_POINT
-    nullObject[c4d.NULLOBJECT_RADIUS] = 5
+    totalWidth = rect.width - padding
 
-    sharpLead = getChildByName(nullObject, "Sharp Lead")
 
-    lead = getChildByName(sharpLead, "Lead")
-    lead[c4d.PRIM_CYLINDER_RADIUS] = rect.width/2 * .25
-    lead[c4d.PRIM_CYLINDER_HEIGHT] = totalHeight - .8
-    c4d.BaseObject.SetRelRot(lead, [1.5707963268,0,1.5707963268])
+    totalHeight = 600
+    totalWidth = 35
+    pencilRadius = totalWidth / 2
+    leadRadius = pencilRadius 
 
-    cone = getChildByName(sharpLead, "Lead Cone")
-    c4d.BaseObject.SetRelRot(cone, [1.5707963268,0,1.5707963268])
-    cone[c4d.PRIM_CONE_HEIGHT] = totalHeight - 1
-    c4d.BaseObject.SetRelPos(cone, [0,0,-.5])
-
-    removeLead = getChildByName(nullObject, "Remove Lead")
-    leadRecess = getChildByName(removeLead, "Lead")
-    leadRecess[c4d.PRIM_CYLINDER_RADIUS] = (rect.width/2 * .25) * 1.025
-    leadRecess[c4d.PRIM_CYLINDER_HEIGHT] = totalHeight - 1
-    c4d.BaseObject.SetRelRot(leadRecess, [1.5707963268,0,1.5707963268])
-
-    wood = getChildByName(removeLead, "Wood")
-
-    cone = getChildByName(wood, "Cone")
-    c4d.BaseObject.SetRelRot(cone, [1.5707963268,0,1.5707963268])
-    cone[c4d.PRIM_CONE_HEIGHT] = totalHeight - 1
-
-    extrude = getChildByName(wood, "Extrude")
-    extrude[c4d.EXTRUDEOBJECT_EXTRUSIONOFFSET] = totalHeight
-    c4d.BaseObject.SetRelPos(extrude, [0,0,-totalHeight/2])
-
+    sharpenedPencil = getChildByName(nullObject, "Sharpened Pencil")
+    intersection = getChildByName(sharpenedPencil, "Intersection")
+    combinedShapes = getChildByName(intersection, "Combined Shapes")
+    cylinder = getChildByName(combinedShapes, "Cylinder")
+    cone = getChildByName(combinedShapes, "Cone")
+    pencil = getChildByName(sharpenedPencil, "Pencil")
+    lead = getChildByName(pencil, "Lead")
+    removeLead = getChildByName(pencil, "Remove Lead")
+    extrude = getChildByName(removeLead, "Extrude")
     spline = getChildByName(extrude, "Spline")
-    spline[c4d.PRIM_NSIDE_RADIUS] = (rect.width/2) - 2
-    spline[c4d.PRIM_NSIDE_RRADIUS] = rect.width/2 * .2
-    spline[c4d.PRIM_NSIDE_ROUNDING] = False
-    c4d.BaseObject.SetRelPos(extrude, [0,0,-totalHeight/2])
+    leadHole = getChildByName(removeLead, "Lead Hole")
 
-    # cube = getChildByName(nullObject, "Test Cube")
-   
-    # cube[c4d.PRIM_CUBE_LEN, c4d.VECTOR_X] = rect.width
-    # cube[c4d.PRIM_CUBE_LEN, c4d.VECTOR_Y] = 10
-    # cube[c4d.PRIM_CUBE_LEN, c4d.VECTOR_Z] = rect.height
+    cylinderHeight = totalHeight/2
+    cylinder[c4d.PRIM_CYLINDER_HEIGHT] = cylinderHeight
+    cylinder[c4d.PRIM_CYLINDER_RADIUS] = totalWidth
+    c4d.BaseObject.SetRelPos(cylinder, [0,0,-cylinderHeight/2])
 
-    c4d.BaseObject.SetRelPos(nullObject, [rect.center.x, rect.center.y + (rect.width/2) - 2, rect.center.z])
+    coneHeight = totalHeight/2
+    cone[c4d.PRIM_CONE_HEIGHT] = coneHeight
+    cone[c4d.PRIM_CONE_TRAD] = 5
+    cone[c4d.PRIM_CONE_BRAD] = 100
+    cone[c4d.PRIM_CONE_TOPFILLET] = True
+    cone[c4d.PRIM_CONE_TOPFILLET_RADIUS] = 5
+    cone[c4d.PRIM_CONE_TOPFILLET_HEIGHT] = 5
+    cone[c4d.PRIM_CONE_SEG] = 32
+    c4d.BaseObject.SetRelPos(cone, [0,0,coneHeight/2])
+
+    lead[c4d.PRIM_CYLINDER_HEIGHT] = totalHeight + 2
+    lead[c4d.PRIM_CYLINDER_RADIUS] = leadRadius
+
+    extrude[c4d.EXTRUDEOBJECT_EXTRUSIONOFFSET] = totalHeight + 2
+    c4d.BaseObject.SetRelPos(extrude, [0,0,(-totalHeight/2) - 1])
+
+    spline[c4d.PRIM_NSIDE_RADIUS] = totalWidth
+    spline[c4d.PRIM_NSIDE_RRADIUS] = 5
+    spline[c4d.PRIM_NSIDE_ROUNDING] = True
+    c4d.BaseObject.SetRelPos(spline, [0,0,0])
+
+    leadHole[c4d.PRIM_CYLINDER_HEIGHT] = totalHeight + 2
+    leadHole[c4d.PRIM_CYLINDER_RADIUS] = leadRadius + .005
+    c4d.BaseObject.SetRelPos(leadHole, [0,0,-1])
+
+        

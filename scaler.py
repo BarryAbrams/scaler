@@ -20,7 +20,8 @@ def main(op, doc):
 
     for i in range(op[c4d.ID_USERDATA,1]):
         split(doc, op, obj, i)
-        
+    
+    count = 0
     for polyID, poly in enumerate(obj.GetAllPolygons()):
         pointA = obj.GetPoint(poly.a)
         pointB = obj.GetPoint(poly.b)
@@ -30,7 +31,9 @@ def main(op, doc):
         points = [pointA, pointB, pointC, pointD]
         rect = scalerUtils.Rect(points)
 
-        object.createObject(op, obj, polyID, rect, doc.GetMaterials())
+        if count == 0:
+            object.createObject(op, obj, polyID, rect, doc.GetMaterials())
+        count = count + 1
 
     return obj
 
